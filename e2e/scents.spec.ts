@@ -1,13 +1,12 @@
 import { expect, test } from "@playwright/test"
 import { ADMIN_STATE, backend, tokenFromState, uid } from "./helpers"
 
-// 1×1 PNG
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64")
+const IMAGE = "https://picsum.photos/seed/e2e-jasmine/600/450"
 
 test.describe("scent showcase", () => {
   test.use({ storageState: ADMIN_STATE })
 
-  test("admin adds a scent with an uploaded image; visitors see it, filter it, and it disappears when hidden", async ({ page, browser, request }) => {
+  test("admin adds a scent with an image URL; visitors see it, filter it, and it disappears when hidden", async ({ page, browser, request }) => {
     const name = `E2E Hoa nhài ${uid()}`
     const api = backend(request, tokenFromState(ADMIN_STATE))
     try {
@@ -17,12 +16,16 @@ test.describe("scent showcase", () => {
       await page.getByLabel("Tên mùi hương").fill(name)
       await page.getByLabel("Loại mùi").selectOption("NATURAL")
       await page.getByLabel("Mô tả").fill("Hương hoa nhài trắng, dịu và thanh.\nHợp phòng ngủ.")
-      await page.getByTestId("scent-image-input").setInputFiles({ name: "nhai.png", mimeType: "image/png", buffer: PNG })
+      await page.getByLabel("Đường dẫn ảnh").fill("ftp://example.com/hoa-nhai.png")
+      await page.getByRole("button", { name: "Lưu", exact: true }).click()
+      await expect(page.getByText("Đường dẫn ảnh phải bắt đầu bằng http:// hoặc https://")).toBeVisible()
+      await page.getByLabel("Đường dẫn ảnh").fill(IMAGE)
+      await expect(page.getByRole("img", { name: "Xem trước ảnh mùi hương" })).toHaveAttribute("src", IMAGE)
       await page.getByRole("button", { name: "Lưu", exact: true }).click()
       await expect(page.getByText("Đã thêm mùi hương")).toBeVisible()
       const row = page.getByTestId("admin-scent-row").filter({ hasText: name })
       await expect(row).toContainText("Hương tự nhiên")
-      await expect(row.locator("img")).toHaveAttribute("src", /\/uploads\/scents\/.+\.png$/)
+      await expect(row.locator("img")).toHaveAttribute("src", IMAGE)
 
       // Visitor (no login): sees it, with its type, description and image
       const visitor = await browser.newContext()
@@ -33,7 +36,7 @@ test.describe("scent showcase", () => {
       const card = guest.getByTestId("scent-card").filter({ hasText: name })
       await expect(card).toContainText("Hương tự nhiên")
       await expect(card).toContainText("Hợp phòng ngủ.")
-      await expect(card.locator("img")).toHaveJSProperty("naturalWidth", 1) // the uploaded image really loads
+      await expect(card.locator("img")).toHaveAttribute("src", IMAGE)
       await expect(guest.getByRole("button", { name: /Thêm .* vào giỏ/ })).toHaveCount(0) // display only
 
       // Filter by scent type

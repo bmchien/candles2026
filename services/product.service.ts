@@ -1,7 +1,7 @@
 import { api, resolveAssetUrl, type Paged } from "@/lib/api/client"
 import type { Product, ProductFilters } from "@/types/commerce"
 
-/** Image URLs from /uploads are relative to the backend; make them usable in <img src>. */
+/** Missing images fall back to a placeholder. */
 export function normalizeProduct<T extends Product>(product: T): T {
   return { ...product, images: product.images.map((image) => ({ ...image, url: resolveAssetUrl(image.url) })) }
 }

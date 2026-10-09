@@ -15,10 +15,4 @@ export const scentService = {
   /** Partial update; e.g. `{ isActive: false }` hides the scent. */
   update: async (id: number, input: Partial<ScentInput>) => normalizeScent(await api.put<AdminScent>(`/admin/scents/${id}`, input)),
   remove: (id: number) => api.delete<{ id: number; deleted: true }>(`/admin/scents/${id}`),
-  /** Uploads an image (jpeg/png/webp/gif, max 5 MB) and returns its URL, to be used as `imageUrl`. */
-  uploadImage: async (file: File) => {
-    const form = new FormData()
-    form.append("file", file)
-    return (await api.upload<{ url: string }>("/admin/scents/image", form)).url
-  },
 }

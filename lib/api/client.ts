@@ -298,10 +298,9 @@ export const api = {
   download,
 }
 
-/** Absolute URL for images the backend serves from /uploads. */
+/** Image URLs are external http(s) links; missing images fall back to a placeholder. */
 export function resolveAssetUrl(url: string | null | undefined): string {
-  if (!url) return "/placeholder.svg"
-  return url.startsWith("/uploads/") ? `${API_URL}${url}` : url
+  return url || "/placeholder.svg"
 }
 
 /** User-facing message for any thrown value. Never exposes raw server output. */
