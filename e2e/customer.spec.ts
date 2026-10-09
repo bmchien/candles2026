@@ -87,6 +87,46 @@ test("checkout requires a desired receive date from today on", async ({ page }) 
   await expect(page.getByRole("complementary").getByText(ddmmyyyy(inDays(-1)))).toBeVisible()
 })
 
+test("each product can carry a note (colour, scent…) from product page to cart, checkout and the order", async ({ page, request }) => {
+  const NOTE = "Màu hồng pastel, hương hoa nhài\nKhắc chữ: An"
+  await page.goto(`/products/${product.code}`)
+  await page.getByLabel(/Ghi chú cho sản phẩm/).fill("Màu hồng pastel")
+  await page.getByRole("button", { name: "Thêm vào giỏ" }).click()
+  await expect(page.getByText("Đã thêm vào giỏ hàng")).toBeVisible()
+  await expect(page.getByLabel(/Ghi chú cho sản phẩm/)).toHaveValue("") // cleared after adding
+
+  // Adding the same product again with another note keeps both notes
+  await page.getByLabel(/Ghi chú cho sản phẩm/).fill("Hương hoa nhài")
+  await page.getByRole("button", { name: "Thêm vào giỏ" }).click()
+  await expect(page.getByTestId("cart-count")).toHaveText("2")
+
+  // Edit the note in the cart: saved on the server when the field loses focus
+  await page.goto("/cart")
+  const note = page.getByTestId("cart-item-note")
+  await expect(note).toHaveValue("Màu hồng pastel | Hương hoa nhài")
+  await note.fill(NOTE)
+  await page.getByRole("heading", { name: "Tóm tắt đơn hàng" }).click()
+  await expect(page.getByText("Đã lưu ghi chú")).toBeVisible()
+  await page.reload()
+  await expect(note).toHaveValue(NOTE)
+
+  // Checkout shows it; the order keeps it
+  await page.goto("/checkout")
+  await expect(page.getByTestId("checkout-item-note")).toContainText("Màu hồng pastel, hương hoa nhài")
+  await page.getByRole("group", { name: "Hình thức nhận hàng" }).getByText("Nhận hàng trực tiếp").click()
+  await page.getByLabel("Họ và tên").fill("Khách Ghi Chú")
+  await page.getByLabel("Số điện thoại").fill("0912345678")
+  await page.getByLabel("Ngày nhận mong muốn").fill(inDays(5))
+  await page.getByRole("button", { name: "Đặt hàng" }).click()
+  await expect(page).toHaveURL(/\/orders\/\d+$/)
+  await expect(page.getByTestId("order-item-note")).toHaveText(`Ghi chú: ${NOTE}`)
+
+  // …and the shop sees it in the admin order
+  const orderId = page.url().split("/").pop()
+  const adminOrder = await backend(request, adminToken).get<{ items: { note: string | null }[] }>(`/admin/orders/${orderId}`)
+  expect(adminOrder.items[0].note).toBe(NOTE)
+})
+
 // TEST 7: delivery checkout with cascading address
 test("checkout with DELIVERY: province → wards, ward resets on province change", async ({ page }) => {
   await addTestProduct(page)

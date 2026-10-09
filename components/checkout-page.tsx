@@ -232,12 +232,12 @@ export function CheckoutPage({ cart, defaultName = "", onPlaceOrder }: CheckoutP
         </section>
 
         <aside className="h-fit rounded-2xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="font-serif text-xl">Đơn hàng của bạn</h2>
+          <h2 className="font-serif text-xl">Đơn hàng của bạn</h2><Link href="/cart" className="mt-1 inline-block text-[11px] font-semibold text-primary">Sửa số lượng hoặc ghi chú trong giỏ hàng</Link>
           <div className="mt-4 flex flex-col gap-3">
             {items.map((item) => (
               <div key={item.product_id} className="flex items-center gap-3">
                 <img src={item.product.image} alt="" className="size-12 rounded-lg object-cover" />
-                <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{item.product.name}</p><p className="text-[11px] text-muted-foreground">Số lượng: {item.quantity}</p>{!item.available && <p className="text-[11px] font-semibold text-destructive">Không còn khả dụng</p>}</div>
+                <div className="min-w-0 flex-1"><p className="truncate text-xs font-semibold">{item.product.name}</p><p className="text-[11px] text-muted-foreground">Số lượng: {item.quantity}</p>{item.note && <p data-testid="checkout-item-note" className="mt-0.5 line-clamp-2 text-[11px] italic text-[#5c4a2e]">Ghi chú: {item.note}</p>}{!item.available && <p className="text-[11px] font-semibold text-destructive">Không còn khả dụng</p>}</div>
                 <span className="text-xs font-medium">{formatVnd(item.subtotal)}</span>
               </div>
             ))}

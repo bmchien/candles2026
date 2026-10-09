@@ -164,6 +164,8 @@ export interface CartItem {
     status: ProductStatus
   }
   quantity: number
+  /** Customer's note for this product (colour, scent, message…) */
+  note: string | null
   unit_price: number
   final_price: number
   subtotal: number
@@ -231,6 +233,8 @@ export interface OrderItem {
   price: number
   quantity: number
   subtotal: number
+  /** Customer's note for this product, copied from the cart */
+  note: string | null
 }
 
 export interface Order {

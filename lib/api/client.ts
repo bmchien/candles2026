@@ -62,6 +62,7 @@ const CODE_MESSAGES: Record<string, string> = {
   INVALID_FILE: "Tệp tải lên không hợp lệ.",
   CART_ITEM_NOT_FOUND: "Sản phẩm không có trong giỏ hàng.",
   CART_EMPTY: "Giỏ hàng đang trống.",
+  NOTE_TOO_LONG: "Ghi chú của sản phẩm này đã quá 500 ký tự. Vui lòng rút gọn ghi chú trong giỏ hàng.",
   CART_HAS_UNAVAILABLE_ITEMS: "Một số sản phẩm trong giỏ đã hết hàng hoặc ngừng bán. Vui lòng kiểm tra lại giỏ hàng.",
   ORDER_NOT_FOUND: "Không tìm thấy đơn hàng.",
   INVALID_SHIPPING_ADDRESS: "Địa chỉ nhận hàng không hợp lệ.",

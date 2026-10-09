@@ -6,6 +6,7 @@ type RawCart = Omit<Cart, "items"> & { items: RawCartItem[]; guest_token?: strin
 type RawMergedCart = RawCart & { merge: CartMergeResult }
 
 export const MAX_CART_ITEM_QUANTITY = 99
+export const MAX_CART_NOTE_LENGTH = 500
 
 const EMPTY_CART: Cart = { id: null, items: [], total_quantity: 0, total: 0, has_unavailable_items: false }
 
@@ -26,9 +27,17 @@ export const cartService = {
     if (!hasAccessToken() && !getCartToken()) return EMPTY_CART
     return normalizeCart(await api.get<RawCart>("/cart"))
   },
-  /** Adds to the quantity already in the cart. 409 PRODUCT_OUT_OF_STOCK for out-of-stock products. */
-  add: async (productId: number, quantity = 1) => normalizeCart(await api.post<RawCart>("/cart/items", { productId, quantity })),
+  /**
+   * Adds to the quantity already in the cart. 409 PRODUCT_OUT_OF_STOCK for out-of-stock products.
+   * A non-empty note is appended to the line's note (" | "); without one the existing note is kept.
+   */
+  add: async (productId: number, quantity = 1, note?: string) => {
+    const trimmed = note?.trim()
+    return normalizeCart(await api.post<RawCart>("/cart/items", { productId, quantity, ...(trimmed ? { note: trimmed } : {}) }))
+  },
   setQuantity: async (productId: number, quantity: number) => normalizeCart(await api.put<RawCart>(`/cart/items/${productId}`, { quantity })),
+  /** Saves the note of one line; an empty note removes it. */
+  setNote: async (productId: number, note: string) => normalizeCart(await api.put<RawCart>(`/cart/items/${productId}`, { note: note.trim() || null })),
   remove: async (productId: number) => normalizeCart(await api.delete<RawCart>(`/cart/items/${productId}`)),
   clear: async () => normalizeCart(await api.delete<RawCart>("/cart")),
   hasGuestCart: () => getCartToken() !== null,
