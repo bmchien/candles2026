@@ -10,7 +10,8 @@ export type UserRole = "CUSTOMER" | "ADMIN"
 /** Handmade-order workflow; see backend src/orders/order-status.ts for allowed transitions. */
 export type OrderStatus = "AWAITING_DEPOSIT" | "DEPOSITED" | "IN_PRODUCTION" | "COMPLETED" | "SHIPPING" | "DELIVERED" | "CANCELLED"
 export type ShippingMethod = "PICKUP" | "DELIVERY"
-export type ProductSort = "newest" | "oldest" | "price_asc" | "price_desc" | "name_asc" | "name_desc"
+/** "featured" = admin order (display_order) first, then newest */
+export type ProductSort = "featured" | "newest" | "oldest" | "price_asc" | "price_desc" | "name_asc" | "name_desc"
 
 export interface CategoryRef {
   id: number
@@ -66,6 +67,8 @@ export interface Product {
 export interface AdminProduct extends Product {
   description: string | null
   is_active: boolean
+  /** Storefront position chosen by the admin (1 = first); null = not pinned */
+  display_order: number | null
   category_id: number
   created_at: string
   updated_at: string
@@ -102,6 +105,8 @@ export interface ProductInput {
   discountEnd?: string | null
   status?: ProductStatus
   isActive?: boolean
+  /** 1 = first in the storefront; null = not pinned */
+  displayOrder?: number | null
   tagIds?: number[]
   images?: { url: string; position?: number }[]
 }

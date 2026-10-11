@@ -71,7 +71,11 @@ test("tag CRUD", async ({ page }) => {
   await expect(edited).toHaveCount(0)
 })
 
-test("product CRUD: create, edit discount/tags, hide/show, stock, delete", async ({ page, request }) => {
+const IMG_A = "https://picsum.photos/seed/e2e-ui-a/800/800"
+const IMG_B = "https://picsum.photos/seed/e2e-ui-b/800/800"
+const IMG_C = "https://picsum.photos/seed/e2e-ui-c/800/800"
+
+test("product CRUD: create, edit discount/tags/images, hide/show, stock, delete", async ({ page, request }) => {
   test.setTimeout(150_000)
   const code = `E2E-UI-${uid()}`
   const tags = await backend(request).get<{ id: number; name: string; slug: string }[]>("/tags")
@@ -84,7 +88,10 @@ test("product CRUD: create, edit discount/tags, hide/show, stock, delete", async
     await page.getByLabel("Giá gốc (₫)").fill("500000")
     await page.getByLabel("Loại giảm giá").selectOption("FIXED")
     await page.getByLabel("Giá trị giảm").fill("50000")
-    await page.getByLabel("Đường dẫn ảnh chính").fill("https://picsum.photos/seed/e2e-ui/800/800")
+    await page.getByLabel("Đường dẫn ảnh 1").fill(IMG_A)
+    await page.getByRole("button", { name: "Thêm ảnh" }).click()
+    await page.getByLabel("Đường dẫn ảnh 2").fill(IMG_B)
+    await expect(page.getByRole("img", { name: "Xem trước ảnh chính" })).toHaveAttribute("src", IMG_A)
     await page.getByRole("button", { name: tags[0].name, exact: true }).click()
     await page.getByRole("button", { name: "Lưu sản phẩm" }).click()
     await expect(page.getByText("Đã tạo sản phẩm mới")).toBeVisible()
@@ -94,6 +101,8 @@ test("product CRUD: create, edit discount/tags, hide/show, stock, delete", async
     const [created] = await backend(request).get<ApiProduct[]>(`/products?q=${code}`)
     expect(created.final_price).toBe(450000)
     expect(created.tags.map((t) => t.slug)).toContain(tags[0].slug)
+    const createdDetail = await backend(request).get<{ images: { url: string }[] }>(`/products/${code}`)
+    expect(createdDetail.images.map((i) => i.url)).toEqual([IMG_A, IMG_B])
 
     await page.getByLabel("Tìm sản phẩm").fill(code)
     const row = page.getByTestId("admin-product-row").filter({ hasText: code })
@@ -106,8 +115,18 @@ test("product CRUD: create, edit discount/tags, hide/show, stock, delete", async
     await page.getByLabel("Loại giảm giá").selectOption("PERCENT")
     await page.getByLabel("Giá trị giảm").fill("20")
     await page.getByRole("button", { name: tags[1].name, exact: true }).click()
+    // Images: add a third, move it to the front (new main image), remove the old second one
+    await expect(page.getByTestId("product-image-row")).toHaveCount(2)
+    await page.getByRole("button", { name: "Thêm ảnh" }).click()
+    await page.getByLabel("Đường dẫn ảnh 3").fill(IMG_C)
+    await page.getByRole("button", { name: "Đưa ảnh 3 lên trước" }).click()
+    await page.getByRole("button", { name: "Đưa ảnh 2 lên trước" }).click()
+    await page.getByRole("button", { name: "Xóa ảnh 3" }).click()
+    await expect(page.getByRole("img", { name: "Xem trước ảnh chính" })).toHaveAttribute("src", IMG_C)
     await page.getByRole("button", { name: "Lưu sản phẩm" }).click()
     await expect(page.getByText("Đã cập nhật sản phẩm")).toBeVisible()
+    const editedDetail = await backend(request).get<{ images: { url: string }[] }>(`/products/${code}`)
+    expect(editedDetail.images.map((i) => i.url)).toEqual([IMG_C, IMG_A])
     let [after] = await backend(request).get<ApiProduct[]>(`/products?q=${code}`)
     expect(after.final_price).toBe(400000)
     expect(after.tags).toHaveLength(2)
